@@ -13,13 +13,13 @@ export const Route = createFileRoute("/_authenticated")({
   component: AuthLayout,
 });
 
-const navItems = [
+const navItems: Array<{ to: string; label: string; icon: typeof Home; exact?: boolean }> = [
   { to: "/", label: "Início", icon: Home, exact: true },
   { to: "/financeiro", label: "Faturas", icon: Receipt },
   { to: "/velocidade", label: "Velocidade", icon: Gauge },
   { to: "/suporte", label: "Suporte", icon: LifeBuoy },
   { to: "/perfil", label: "Perfil", icon: User },
-] as const;
+];
 
 function AuthLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
