@@ -1,0 +1,107 @@
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { User, LogOut, ShieldCheck, Wifi } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+export const Route = createFileRoute("/_authenticated/perfil")({
+  head: () => ({ meta: [{ title: "Perfil — TRIX ISP" }] }),
+  component: PerfilPage,
+});
+
+function PerfilPage() {
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const [form, setForm] = useState({ nome: "", telefone: "", cpf_cnpj: "" });
+
+  const { data: profile } = useQuery({
+    queryKey: ["profile"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+      const { data } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+      return data;
+    },
+  });
+
+  useEffect(() => {
+    if (profile) setForm({ nome: profile.nome ?? "", telefone: profile.telefone ?? "", cpf_cnpj: profile.cpf_cnpj ?? "" });
+  }, [profile]);
+
+  const salvar = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("profiles").update(form).eq("id", profile!.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Perfil atualizado");
+      qc.invalidateQueries({ queryKey: ["profile"] });
+    },
+  });
+
+  const logout = async () => {
+    await supabase.auth.signOut();
+    navigate({ to: "/login", replace: true });
+  };
+
+  return (
+    <div className="max-w-2xl mx-auto p-4 md:p-8 space-y-6">
+      <header>
+        <h1 className="font-display text-2xl md:text-3xl font-bold">Perfil</h1>
+        <p className="text-sm text-muted-foreground">Seus dados cadastrais e do plano.</p>
+      </header>
+
+      <Card className="p-6 bg-gradient-card border-0 shadow-card">
+        <div className="flex items-center gap-4">
+          <div className="size-16 rounded-2xl bg-gradient-brand grid place-items-center text-white shadow-brand">
+            <User className="size-7" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-display text-xl font-bold truncate">{profile?.nome || "—"}</div>
+            <div className="text-sm text-muted-foreground truncate">{profile?.email}</div>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3 mt-4">
+          <div className="bg-card p-3 rounded-lg border">
+            <div className="text-xs text-muted-foreground flex items-center gap-1"><Wifi className="size-3" /> Plano</div>
+            <div className="font-display font-semibold">{profile?.plano}</div>
+          </div>
+          <div className="bg-card p-3 rounded-lg border">
+            <div className="text-xs text-muted-foreground flex items-center gap-1"><ShieldCheck className="size-3" /> Status</div>
+            <div className="font-display font-semibold capitalize">{profile?.status}</div>
+          </div>
+        </div>
+      </Card>
+
+      <Card className="p-6 space-y-4">
+        <h2 className="font-display font-semibold">Dados cadastrais</h2>
+        <div className="space-y-2">
+          <Label>Nome completo</Label>
+          <Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <Label>CPF/CNPJ</Label>
+            <Input value={form.cpf_cnpj} onChange={(e) => setForm({ ...form, cpf_cnpj: e.target.value })} />
+          </div>
+          <div className="space-y-2">
+            <Label>Telefone</Label>
+            <Input value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} />
+          </div>
+        </div>
+        <Button onClick={() => salvar.mutate()} disabled={salvar.isPending} className="w-full bg-gradient-brand text-white shadow-brand">
+          {salvar.isPending ? "Salvando..." : "Salvar alterações"}
+        </Button>
+      </Card>
+
+      <Button variant="outline" onClick={logout} className="w-full">
+        <LogOut className="size-4 mr-2" /> Sair da conta
+      </Button>
+    </div>
+  );
+}

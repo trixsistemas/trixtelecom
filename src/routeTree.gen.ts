@@ -9,27 +9,304 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SignupRouteImport } from './routes/signup'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
+import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedVelocidadeRouteImport } from './routes/_authenticated/velocidade'
+import { Route as AuthenticatedSuporteRouteImport } from './routes/_authenticated/suporte'
+import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
+import { Route as AuthenticatedFinanceiroRouteImport } from './routes/_authenticated/financeiro'
+import { Route as AuthenticatedSuporteNovoRouteImport } from './routes/_authenticated/suporte.novo'
+import { Route as AuthenticatedSuporteTicketIdRouteImport } from './routes/_authenticated/suporte.$ticketId'
+import { Route as AuthenticatedFinanceiroFaturaIdRouteImport } from './routes/_authenticated/financeiro.$faturaId'
 
-export interface FileRoutesByFullPath {}
-export interface FileRoutesByTo {}
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedVelocidadeRoute = AuthenticatedVelocidadeRouteImport.update({
+  id: '/velocidade',
+  path: '/velocidade',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedSuporteRoute = AuthenticatedSuporteRouteImport.update({
+  id: '/suporte',
+  path: '/suporte',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedPerfilRoute = AuthenticatedPerfilRouteImport.update({
+  id: '/perfil',
+  path: '/perfil',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedFinanceiroRoute = AuthenticatedFinanceiroRouteImport.update({
+  id: '/financeiro',
+  path: '/financeiro',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedSuporteNovoRoute =
+  AuthenticatedSuporteNovoRouteImport.update({
+    id: '/novo',
+    path: '/novo',
+    getParentRoute: () => AuthenticatedSuporteRoute,
+  } as any)
+const AuthenticatedSuporteTicketIdRoute =
+  AuthenticatedSuporteTicketIdRouteImport.update({
+    id: '/$ticketId',
+    path: '/$ticketId',
+    getParentRoute: () => AuthenticatedSuporteRoute,
+  } as any)
+const AuthenticatedFinanceiroFaturaIdRoute =
+  AuthenticatedFinanceiroFaturaIdRouteImport.update({
+    id: '/$faturaId',
+    path: '/$faturaId',
+    getParentRoute: () => AuthenticatedFinanceiroRoute,
+  } as any)
+
+export interface FileRoutesByFullPath {
+  '/': typeof AuthenticatedIndexRoute
+  '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
+  '/financeiro': typeof AuthenticatedFinanceiroRouteWithChildren
+  '/perfil': typeof AuthenticatedPerfilRoute
+  '/suporte': typeof AuthenticatedSuporteRouteWithChildren
+  '/velocidade': typeof AuthenticatedVelocidadeRoute
+  '/financeiro/$faturaId': typeof AuthenticatedFinanceiroFaturaIdRoute
+  '/suporte/$ticketId': typeof AuthenticatedSuporteTicketIdRoute
+  '/suporte/novo': typeof AuthenticatedSuporteNovoRoute
+}
+export interface FileRoutesByTo {
+  '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
+  '/financeiro': typeof AuthenticatedFinanceiroRouteWithChildren
+  '/perfil': typeof AuthenticatedPerfilRoute
+  '/suporte': typeof AuthenticatedSuporteRouteWithChildren
+  '/velocidade': typeof AuthenticatedVelocidadeRoute
+  '/': typeof AuthenticatedIndexRoute
+  '/financeiro/$faturaId': typeof AuthenticatedFinanceiroFaturaIdRoute
+  '/suporte/$ticketId': typeof AuthenticatedSuporteTicketIdRoute
+  '/suporte/novo': typeof AuthenticatedSuporteNovoRoute
+}
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
+  '/_authenticated/financeiro': typeof AuthenticatedFinanceiroRouteWithChildren
+  '/_authenticated/perfil': typeof AuthenticatedPerfilRoute
+  '/_authenticated/suporte': typeof AuthenticatedSuporteRouteWithChildren
+  '/_authenticated/velocidade': typeof AuthenticatedVelocidadeRoute
+  '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/financeiro/$faturaId': typeof AuthenticatedFinanceiroFaturaIdRoute
+  '/_authenticated/suporte/$ticketId': typeof AuthenticatedSuporteTicketIdRoute
+  '/_authenticated/suporte/novo': typeof AuthenticatedSuporteNovoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: never
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/signup'
+    | '/financeiro'
+    | '/perfil'
+    | '/suporte'
+    | '/velocidade'
+    | '/financeiro/$faturaId'
+    | '/suporte/$ticketId'
+    | '/suporte/novo'
   fileRoutesByTo: FileRoutesByTo
-  to: never
-  id: '__root__'
+  to:
+    | '/login'
+    | '/signup'
+    | '/financeiro'
+    | '/perfil'
+    | '/suporte'
+    | '/velocidade'
+    | '/'
+    | '/financeiro/$faturaId'
+    | '/suporte/$ticketId'
+    | '/suporte/novo'
+  id:
+    | '__root__'
+    | '/_authenticated'
+    | '/login'
+    | '/signup'
+    | '/_authenticated/financeiro'
+    | '/_authenticated/perfil'
+    | '/_authenticated/suporte'
+    | '/_authenticated/velocidade'
+    | '/_authenticated/'
+    | '/_authenticated/financeiro/$faturaId'
+    | '/_authenticated/suporte/$ticketId'
+    | '/_authenticated/suporte/novo'
   fileRoutesById: FileRoutesById
 }
-export interface RootRouteChildren {}
-
-declare module '@tanstack/react-router' {
-  interface FileRoutesByPath {}
+export interface RootRouteChildren {
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  LoginRoute: typeof LoginRoute
+  SignupRoute: typeof SignupRoute
 }
 
-const rootRouteChildren: RootRouteChildren = {}
+declare module '@tanstack/react-router' {
+  interface FileRoutesByPath {
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/': {
+      id: '/_authenticated/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/velocidade': {
+      id: '/_authenticated/velocidade'
+      path: '/velocidade'
+      fullPath: '/velocidade'
+      preLoaderRoute: typeof AuthenticatedVelocidadeRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/suporte': {
+      id: '/_authenticated/suporte'
+      path: '/suporte'
+      fullPath: '/suporte'
+      preLoaderRoute: typeof AuthenticatedSuporteRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/perfil': {
+      id: '/_authenticated/perfil'
+      path: '/perfil'
+      fullPath: '/perfil'
+      preLoaderRoute: typeof AuthenticatedPerfilRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/financeiro': {
+      id: '/_authenticated/financeiro'
+      path: '/financeiro'
+      fullPath: '/financeiro'
+      preLoaderRoute: typeof AuthenticatedFinanceiroRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/suporte/novo': {
+      id: '/_authenticated/suporte/novo'
+      path: '/novo'
+      fullPath: '/suporte/novo'
+      preLoaderRoute: typeof AuthenticatedSuporteNovoRouteImport
+      parentRoute: typeof AuthenticatedSuporteRoute
+    }
+    '/_authenticated/suporte/$ticketId': {
+      id: '/_authenticated/suporte/$ticketId'
+      path: '/$ticketId'
+      fullPath: '/suporte/$ticketId'
+      preLoaderRoute: typeof AuthenticatedSuporteTicketIdRouteImport
+      parentRoute: typeof AuthenticatedSuporteRoute
+    }
+    '/_authenticated/financeiro/$faturaId': {
+      id: '/_authenticated/financeiro/$faturaId'
+      path: '/$faturaId'
+      fullPath: '/financeiro/$faturaId'
+      preLoaderRoute: typeof AuthenticatedFinanceiroFaturaIdRouteImport
+      parentRoute: typeof AuthenticatedFinanceiroRoute
+    }
+  }
+}
+
+interface AuthenticatedFinanceiroRouteChildren {
+  AuthenticatedFinanceiroFaturaIdRoute: typeof AuthenticatedFinanceiroFaturaIdRoute
+}
+
+const AuthenticatedFinanceiroRouteChildren: AuthenticatedFinanceiroRouteChildren =
+  {
+    AuthenticatedFinanceiroFaturaIdRoute: AuthenticatedFinanceiroFaturaIdRoute,
+  }
+
+const AuthenticatedFinanceiroRouteWithChildren =
+  AuthenticatedFinanceiroRoute._addFileChildren(
+    AuthenticatedFinanceiroRouteChildren,
+  )
+
+interface AuthenticatedSuporteRouteChildren {
+  AuthenticatedSuporteTicketIdRoute: typeof AuthenticatedSuporteTicketIdRoute
+  AuthenticatedSuporteNovoRoute: typeof AuthenticatedSuporteNovoRoute
+}
+
+const AuthenticatedSuporteRouteChildren: AuthenticatedSuporteRouteChildren = {
+  AuthenticatedSuporteTicketIdRoute: AuthenticatedSuporteTicketIdRoute,
+  AuthenticatedSuporteNovoRoute: AuthenticatedSuporteNovoRoute,
+}
+
+const AuthenticatedSuporteRouteWithChildren =
+  AuthenticatedSuporteRoute._addFileChildren(AuthenticatedSuporteRouteChildren)
+
+interface AuthenticatedRouteChildren {
+  AuthenticatedFinanceiroRoute: typeof AuthenticatedFinanceiroRouteWithChildren
+  AuthenticatedPerfilRoute: typeof AuthenticatedPerfilRoute
+  AuthenticatedSuporteRoute: typeof AuthenticatedSuporteRouteWithChildren
+  AuthenticatedVelocidadeRoute: typeof AuthenticatedVelocidadeRoute
+  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+}
+
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedFinanceiroRoute: AuthenticatedFinanceiroRouteWithChildren,
+  AuthenticatedPerfilRoute: AuthenticatedPerfilRoute,
+  AuthenticatedSuporteRoute: AuthenticatedSuporteRouteWithChildren,
+  AuthenticatedVelocidadeRoute: AuthenticatedVelocidadeRoute,
+  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
+
+const rootRouteChildren: RootRouteChildren = {
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  LoginRoute: LoginRoute,
+  SignupRoute: SignupRoute,
+}
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
