@@ -14,7 +14,307 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      faturas: {
+        Row: {
+          boleto_url: string | null
+          cliente_id: string
+          created_at: string
+          data_pagamento: string | null
+          data_vencimento: string
+          descricao: string | null
+          id: string
+          linha_digitavel: string | null
+          metodo_pagamento: string | null
+          pix_payload: string | null
+          pix_qrcode: string | null
+          status: string
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          boleto_url?: string | null
+          cliente_id: string
+          created_at?: string
+          data_pagamento?: string | null
+          data_vencimento: string
+          descricao?: string | null
+          id?: string
+          linha_digitavel?: string | null
+          metodo_pagamento?: string | null
+          pix_payload?: string | null
+          pix_qrcode?: string | null
+          status?: string
+          updated_at?: string
+          valor: number
+        }
+        Update: {
+          boleto_url?: string | null
+          cliente_id?: string
+          created_at?: string
+          data_pagamento?: string | null
+          data_vencimento?: string
+          descricao?: string | null
+          id?: string
+          linha_digitavel?: string | null
+          metodo_pagamento?: string | null
+          pix_payload?: string | null
+          pix_qrcode?: string | null
+          status?: string
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "faturas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      historico_acessos: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          descricao: string | null
+          id: string
+          tipo_acesso: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          tipo_acesso?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          tipo_acesso?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "historico_acessos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      historico_bloqueios: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          id: string
+          motivo: string | null
+          tipo_acao: string | null
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          id?: string
+          motivo?: string | null
+          tipo_acao?: string | null
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          id?: string
+          motivo?: string | null
+          tipo_acao?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "historico_bloqueios_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          cpf_cnpj: string | null
+          created_at: string
+          email: string | null
+          erp: string
+          id: string
+          nome: string
+          plano: string | null
+          status: string
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          cpf_cnpj?: string | null
+          created_at?: string
+          email?: string | null
+          erp?: string
+          id: string
+          nome?: string
+          plano?: string | null
+          status?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cpf_cnpj?: string | null
+          created_at?: string
+          email?: string | null
+          erp?: string
+          id?: string
+          nome?: string
+          plano?: string | null
+          status?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      teste_velocidade: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          download_mbps: number | null
+          id: string
+          ip_cliente: string | null
+          jitter_ms: number | null
+          latencia_ms: number | null
+          servidor_teste: string | null
+          upload_mbps: number | null
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          download_mbps?: number | null
+          id?: string
+          ip_cliente?: string | null
+          jitter_ms?: number | null
+          latencia_ms?: number | null
+          servidor_teste?: string | null
+          upload_mbps?: number | null
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          download_mbps?: number | null
+          id?: string
+          ip_cliente?: string | null
+          jitter_ms?: number | null
+          latencia_ms?: number | null
+          servidor_teste?: string | null
+          upload_mbps?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teste_velocidade_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_mensagens: {
+        Row: {
+          autor_nome: string | null
+          autor_tipo: string
+          cliente_id: string
+          created_at: string
+          id: string
+          mensagem: string
+          ticket_id: string
+        }
+        Insert: {
+          autor_nome?: string | null
+          autor_tipo?: string
+          cliente_id: string
+          created_at?: string
+          id?: string
+          mensagem: string
+          ticket_id: string
+        }
+        Update: {
+          autor_nome?: string | null
+          autor_tipo?: string
+          cliente_id?: string
+          created_at?: string
+          id?: string
+          mensagem?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_mensagens_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_mensagens_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tickets: {
+        Row: {
+          categoria: string
+          cliente_id: string
+          closed_at: string | null
+          created_at: string
+          descricao: string
+          id: string
+          prioridade: string
+          status: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          categoria?: string
+          cliente_id: string
+          closed_at?: string | null
+          created_at?: string
+          descricao: string
+          id?: string
+          prioridade?: string
+          status?: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          categoria?: string
+          cliente_id?: string
+          closed_at?: string | null
+          created_at?: string
+          descricao?: string
+          id?: string
+          prioridade?: string
+          status?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tickets_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
