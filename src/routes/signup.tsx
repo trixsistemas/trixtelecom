@@ -25,18 +25,37 @@ export const Route = createFileRoute("/signup")({
 
 function SignupPage() {
   const navigate = useNavigate();
+  const validarSgp = useServerFn(validarClienteSgp);
   const [form, setForm] = useState({ nome: "", email: "", cpf_cnpj: "", telefone: "", password: "" });
   const [loading, setLoading] = useState(false);
+  const [sgpInfo, setSgpInfo] = useState<{ nome?: string; status?: string } | null>(null);
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
+    // 1) Valida o CPF/CNPJ no SGP antes de criar a conta
+    const check = await validarSgp({ data: { cpf_cnpj: form.cpf_cnpj } });
+    if (!check.found) {
+      setLoading(false);
+      toast.error("CPF/CNPJ não encontrado", {
+        description: check.reason ?? "Verifique seus dados ou fale com o suporte.",
+      });
+      return;
+    }
+    setSgpInfo({ nome: check.nome, status: check.status });
+
+    // 2) Cria a conta no Lovable Cloud com os dados do cliente
     const { error } = await supabase.auth.signUp({
       email: form.email,
       password: form.password,
       options: {
         emailRedirectTo: `${window.location.origin}/`,
-        data: { nome: form.nome, cpf_cnpj: form.cpf_cnpj, telefone: form.telefone },
+        data: {
+          nome: form.nome || check.nome || "",
+          cpf_cnpj: form.cpf_cnpj,
+          telefone: form.telefone,
+        },
       },
     });
     setLoading(false);
