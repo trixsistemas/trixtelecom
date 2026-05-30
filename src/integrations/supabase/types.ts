@@ -149,6 +149,11 @@ export type Database = {
           id: string
           nome: string
           plano: string | null
+          sgp_cliente_id: string | null
+          sgp_contrato_id: string | null
+          sgp_raw: Json | null
+          sgp_status: string | null
+          sgp_synced_at: string | null
           status: string
           telefone: string | null
           updated_at: string
@@ -161,6 +166,11 @@ export type Database = {
           id: string
           nome?: string
           plano?: string | null
+          sgp_cliente_id?: string | null
+          sgp_contrato_id?: string | null
+          sgp_raw?: Json | null
+          sgp_status?: string | null
+          sgp_synced_at?: string | null
           status?: string
           telefone?: string | null
           updated_at?: string
@@ -173,6 +183,11 @@ export type Database = {
           id?: string
           nome?: string
           plano?: string | null
+          sgp_cliente_id?: string | null
+          sgp_contrato_id?: string | null
+          sgp_raw?: Json | null
+          sgp_status?: string | null
+          sgp_synced_at?: string | null
           status?: string
           telefone?: string | null
           updated_at?: string

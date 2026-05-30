@@ -1,0 +1,8 @@
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS sgp_cliente_id TEXT,
+  ADD COLUMN IF NOT EXISTS sgp_contrato_id TEXT,
+  ADD COLUMN IF NOT EXISTS sgp_status TEXT,
+  ADD COLUMN IF NOT EXISTS sgp_raw JSONB,
+  ADD COLUMN IF NOT EXISTS sgp_synced_at TIMESTAMPTZ;
+
+ALTER TABLE public.profiles ALTER COLUMN erp SET DEFAULT 'sgp';

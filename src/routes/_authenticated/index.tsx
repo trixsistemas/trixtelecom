@@ -1,10 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { Wifi, ArrowRight, Receipt, LifeBuoy, Gauge, CheckCircle2, AlertCircle } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import { Wifi, ArrowRight, Receipt, LifeBuoy, Gauge, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { sincronizarMeuPerfilSgp } from "@/lib/integrations/sgp.functions";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({ meta: [{ title: "Início — TRIX ISP" }] }),
@@ -19,6 +23,9 @@ function formatDate(d: string) {
 }
 
 function DashboardPage() {
+  const qc = useQueryClient();
+  const syncFn = useServerFn(sincronizarMeuPerfilSgp);
+
   const { data } = useQuery({
     queryKey: ["dashboard"],
     queryFn: async () => {
@@ -36,7 +43,26 @@ function DashboardPage() {
   const faturas = data?.faturas ?? [];
   const aberta = faturas.find((f) => f.status === "aberto");
   const vencida = aberta && new Date(aberta.data_vencimento) < new Date(new Date().toDateString());
-  const conexaoBloqueada = profile?.status === "bloqueado" || vencida;
+  // Status real vem do SGP quando sincronizado; cai pro fallback local caso contrário.
+  const sgpBloqueado = profile?.sgp_status && /(bloq|suspens|inativo|cancel)/i.test(profile.sgp_status);
+  const conexaoBloqueada = sgpBloqueado || profile?.status === "bloqueado" || vencida;
+
+  const syncMutation = useMutation({
+    mutationFn: () => syncFn(),
+    onSuccess: () => {
+      toast.success("Dados sincronizados com o SGP");
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+    onError: (err: Error) => toast.error("Falha ao sincronizar", { description: err.message }),
+  });
+
+  // Auto-sync no primeiro acesso (ou quando ainda não foi sincronizado)
+  useEffect(() => {
+    if (profile && !profile.sgp_synced_at && profile.cpf_cnpj && !syncMutation.isPending) {
+      syncMutation.mutate();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.id, profile?.sgp_synced_at]);
 
   return (
     <div className="max-w-5xl mx-auto p-4 md:p-8 space-y-6">
@@ -55,12 +81,29 @@ function DashboardPage() {
                 {conexaoBloqueada ? "Conexão bloqueada" : "Conexão ativa"} · {profile?.plano ?? "Fibra"}
               </span>
             </div>
+            {profile?.sgp_contrato_id && (
+              <div className="mt-2 flex items-center gap-2 text-xs text-white/70">
+                <Badge variant="secondary" className="bg-white/15 text-white border-0">
+                  SGP · contrato {profile.sgp_contrato_id}
+                </Badge>
+                <button
+                  type="button"
+                  onClick={() => syncMutation.mutate()}
+                  disabled={syncMutation.isPending}
+                  className="inline-flex items-center gap-1 hover:text-white"
+                >
+                  <RefreshCw className={`size-3 ${syncMutation.isPending ? "animate-spin" : ""}`} />
+                  Sincronizar
+                </button>
+              </div>
+            )}
           </div>
           <div className="size-14 rounded-2xl bg-white/15 backdrop-blur grid place-items-center shadow-glow">
             <Wifi className="size-7" />
           </div>
         </div>
       </Card>
+
 
       {/* Fatura em destaque */}
       {aberta ? (
