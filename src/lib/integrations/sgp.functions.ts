@@ -57,26 +57,29 @@ export const sincronizarMeuPerfilSgp = createServerFn({ method: "POST" })
     const contrato = r.contratos?.[0];
     if (!contrato) throw new Error("Cliente não encontrado no SGP.");
 
-    const update = {
+    const sgpClienteId = String(contrato.contrato ?? "");
+    const sgpStatus = String(contrato.statusDisplay ?? contrato.status ?? "");
+    const update: Record<string, unknown> = {
       erp: "sgp",
-      sgp_cliente_id: String(contrato.contrato ?? ""),
-      sgp_contrato_id: String(contrato.contrato ?? ""),
-      sgp_status: String(contrato.statusDisplay ?? contrato.status ?? ""),
+      sgp_cliente_id: sgpClienteId,
+      sgp_contrato_id: sgpClienteId,
+      sgp_status: sgpStatus,
       sgp_raw: r as unknown as Record<string, unknown>,
       sgp_synced_at: new Date().toISOString(),
-      plano: contrato.planoInternet ? String(contrato.planoInternet) : undefined,
-      nome: contrato.razaoSocial ? String(contrato.razaoSocial) : undefined,
     };
-    // remove undefined to não sobrescrever
-    const clean = Object.fromEntries(Object.entries(update).filter(([, v]) => v !== undefined));
+    if (contrato.planoInternet) update.plano = String(contrato.planoInternet);
+    if (contrato.razaoSocial) update.nome = String(contrato.razaoSocial);
 
-    const { error: updErr } = await supabase.from("profiles").update(clean).eq("id", userId);
+    const { error: updErr } = await supabase
+      .from("profiles")
+      .update(update as never)
+      .eq("id", userId);
     if (updErr) throw new Error(updErr.message);
 
     return {
       ok: true as const,
-      contrato: update.sgp_contrato_id,
-      status: update.sgp_status,
-      plano: update.plano ?? null,
+      contrato: sgpClienteId,
+      status: sgpStatus,
+      plano: (update.plano as string | undefined) ?? null,
     };
   });
