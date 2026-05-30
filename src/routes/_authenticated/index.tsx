@@ -81,12 +81,29 @@ function DashboardPage() {
                 {conexaoBloqueada ? "Conexão bloqueada" : "Conexão ativa"} · {profile?.plano ?? "Fibra"}
               </span>
             </div>
+            {profile?.sgp_contrato_id && (
+              <div className="mt-2 flex items-center gap-2 text-xs text-white/70">
+                <Badge variant="secondary" className="bg-white/15 text-white border-0">
+                  SGP · contrato {profile.sgp_contrato_id}
+                </Badge>
+                <button
+                  type="button"
+                  onClick={() => syncMutation.mutate()}
+                  disabled={syncMutation.isPending}
+                  className="inline-flex items-center gap-1 hover:text-white"
+                >
+                  <RefreshCw className={`size-3 ${syncMutation.isPending ? "animate-spin" : ""}`} />
+                  Sincronizar
+                </button>
+              </div>
+            )}
           </div>
           <div className="size-14 rounded-2xl bg-white/15 backdrop-blur grid place-items-center shadow-glow">
             <Wifi className="size-7" />
           </div>
         </div>
       </Card>
+
 
       {/* Fatura em destaque */}
       {aberta ? (
