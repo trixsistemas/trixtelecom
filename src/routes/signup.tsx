@@ -103,8 +103,17 @@ function SignupPage() {
             <Label htmlFor="password">Senha</Label>
             <Input id="password" type="password" required minLength={6} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
           </div>
+          {sgpInfo?.nome && (
+            <div className="rounded-md border border-success/30 bg-success/10 text-success-foreground p-3 text-sm flex items-start gap-2">
+              <ShieldCheck className="size-4 mt-0.5 text-success" />
+              <div>
+                <div className="font-medium">Cliente identificado no SGP</div>
+                <div className="text-muted-foreground">{sgpInfo.nome} · {sgpInfo.status}</div>
+              </div>
+            </div>
+          )}
           <Button type="submit" disabled={loading} className="w-full bg-gradient-brand text-white shadow-brand">
-            {loading ? "Criando..." : "Criar conta"}
+            {loading ? "Validando..." : "Criar conta"}
           </Button>
         </form>
         <p className="text-sm text-muted-foreground text-center">
