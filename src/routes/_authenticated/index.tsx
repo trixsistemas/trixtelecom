@@ -1,10 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { Wifi, ArrowRight, Receipt, LifeBuoy, Gauge, CheckCircle2, AlertCircle } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import { Wifi, ArrowRight, Receipt, LifeBuoy, Gauge, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { sincronizarMeuPerfilSgp } from "@/lib/integrations/sgp.functions";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({ meta: [{ title: "Início — TRIX ISP" }] }),
