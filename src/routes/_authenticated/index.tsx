@@ -23,6 +23,9 @@ function formatDate(d: string) {
 }
 
 function DashboardPage() {
+  const qc = useQueryClient();
+  const syncFn = useServerFn(sincronizarMeuPerfilSgp);
+
   const { data } = useQuery({
     queryKey: ["dashboard"],
     queryFn: async () => {
@@ -40,7 +43,26 @@ function DashboardPage() {
   const faturas = data?.faturas ?? [];
   const aberta = faturas.find((f) => f.status === "aberto");
   const vencida = aberta && new Date(aberta.data_vencimento) < new Date(new Date().toDateString());
-  const conexaoBloqueada = profile?.status === "bloqueado" || vencida;
+  // Status real vem do SGP quando sincronizado; cai pro fallback local caso contrário.
+  const sgpBloqueado = profile?.sgp_status && /(bloq|suspens|inativo|cancel)/i.test(profile.sgp_status);
+  const conexaoBloqueada = sgpBloqueado || profile?.status === "bloqueado" || vencida;
+
+  const syncMutation = useMutation({
+    mutationFn: () => syncFn(),
+    onSuccess: () => {
+      toast.success("Dados sincronizados com o SGP");
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+    onError: (err: Error) => toast.error("Falha ao sincronizar", { description: err.message }),
+  });
+
+  // Auto-sync no primeiro acesso (ou quando ainda não foi sincronizado)
+  useEffect(() => {
+    if (profile && !profile.sgp_synced_at && profile.cpf_cnpj && !syncMutation.isPending) {
+      syncMutation.mutate();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.id, profile?.sgp_synced_at]);
 
   return (
     <div className="max-w-5xl mx-auto p-4 md:p-8 space-y-6">
