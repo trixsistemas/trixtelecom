@@ -32,7 +32,8 @@ export const validarClienteSgp = createServerFn({ method: "POST" })
       };
     } catch (err) {
       console.error("validarClienteSgp", err);
-      return { found: false as const, reason: "Não foi possível consultar o SGP agora" };
+      const msg = err instanceof Error ? err.message : "Erro desconhecido ao consultar o SGP";
+      return { found: false as const, reason: msg };
     }
   });
 
