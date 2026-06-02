@@ -6,7 +6,6 @@ import { sgpConsultaCliente, onlyDigits } from "./sgp.server";
 /**
  * Valida se um CPF/CNPJ existe no SGP — chamado no cadastro,
  * sem auth, para impedir conta de quem não é cliente.
- * Retorna apenas o mínimo necessário (sem dados sensíveis).
  */
 export const validarClienteSgp = createServerFn({ method: "POST" })
   .inputValidator((input) =>
@@ -28,7 +27,7 @@ export const validarClienteSgp = createServerFn({ method: "POST" })
       return {
         found: true as const,
         nome: String(contrato.razaoSocial ?? ""),
-        status: String(contrato.statusDisplay ?? contrato.status ?? ""),
+        status: String(contrato.contratoStatusDisplay ?? contrato.contratoStatus ?? ""),
       };
     } catch (err) {
       console.error("validarClienteSgp", err);
@@ -38,8 +37,7 @@ export const validarClienteSgp = createServerFn({ method: "POST" })
   });
 
 /**
- * Sincroniza o perfil do usuário logado com o SGP, gravando
- * cliente_id, contrato_id, status e o JSON bruto pra auditoria.
+ * Sincroniza o perfil do usuário logado com o SGP.
  */
 export const sincronizarMeuPerfilSgp = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -58,17 +56,20 @@ export const sincronizarMeuPerfilSgp = createServerFn({ method: "POST" })
     const contrato = r.contratos?.[0];
     if (!contrato) throw new Error("Cliente não encontrado no SGP.");
 
-    const sgpClienteId = String(contrato.contrato ?? "");
-    const sgpStatus = String(contrato.statusDisplay ?? contrato.status ?? "");
+    const sgpContratoId = String(contrato.contratoId ?? "");
+    const sgpClienteId = String(contrato.clienteId ?? sgpContratoId);
+    const sgpStatus = String(contrato.contratoStatusDisplay ?? contrato.contratoStatus ?? "");
+    const plano = contrato.planointernet ?? contrato.servico_plano;
+
     const update: Record<string, unknown> = {
       erp: "sgp",
       sgp_cliente_id: sgpClienteId,
-      sgp_contrato_id: sgpClienteId,
+      sgp_contrato_id: sgpContratoId,
       sgp_status: sgpStatus,
       sgp_raw: r as unknown as Record<string, unknown>,
       sgp_synced_at: new Date().toISOString(),
     };
-    if (contrato.planoInternet) update.plano = String(contrato.planoInternet);
+    if (plano) update.plano = String(plano);
     if (contrato.razaoSocial) update.nome = String(contrato.razaoSocial);
 
     const { error: updErr } = await supabase
@@ -79,7 +80,7 @@ export const sincronizarMeuPerfilSgp = createServerFn({ method: "POST" })
 
     return {
       ok: true as const,
-      contrato: sgpClienteId,
+      contrato: sgpContratoId,
       status: sgpStatus,
       plano: (update.plano as string | undefined) ?? null,
     };
