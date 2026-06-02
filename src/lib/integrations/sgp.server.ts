@@ -1,18 +1,24 @@
 // Server-only SGP (Sistema de Gestão de Provedores) client.
 // Docs: https://sgp.tsmx.com.br/integracao/
-//
-// SGP exposes "URA" endpoints that accept a POST with JSON body
-// containing { token, app, ...query }. We wrap that here so the
-// rest of the app uses typed helpers instead of raw fetch calls.
 
 export type SgpContrato = {
-  contrato: number | string;
+  contratoId: number | string;
+  clienteId?: number | string;
   razaoSocial?: string;
-  status?: string;
-  statusDisplay?: string;
-  planoInternet?: string;
-  bloqueio?: string;
-  endereco?: string;
+  contratoStatus?: number | string;
+  contratoStatusDisplay?: string;
+  planointernet?: string;
+  servico_plano?: string;
+  motivo_status?: string;
+  endereco_logradouro?: string;
+  endereco_numero?: number | string;
+  endereco_bairro?: string;
+  endereco_cidade?: string;
+  endereco_uf?: string;
+  endereco_cep?: string;
+  cpfCnpj?: string;
+  telefones?: string[];
+  emails?: string[];
   [k: string]: unknown;
 };
 
