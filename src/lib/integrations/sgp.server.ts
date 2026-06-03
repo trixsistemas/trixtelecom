@@ -29,12 +29,19 @@ export type SgpConsultaCliente = {
 };
 
 function getSgpEnv() {
-  const baseUrl = process.env.SGP_BASE_URL?.replace(/\/+$/, "");
+  const raw = process.env.SGP_BASE_URL;
   const app = process.env.SGP_APP;
   const token = process.env.SGP_TOKEN;
-  if (!baseUrl) throw new Error("SGP_BASE_URL não configurado");
+  if (!raw) throw new Error("SGP_BASE_URL não configurado");
   if (!app) throw new Error("SGP_APP não configurado");
   if (!token) throw new Error("SGP_TOKEN não configurado");
+  // Aceita o secret salvo só como host ou com path: usamos apenas o origin.
+  let baseUrl: string;
+  try {
+    baseUrl = new URL(raw).origin;
+  } catch {
+    baseUrl = raw.replace(/\/+$/, "");
+  }
   return { baseUrl, app, token };
 }
 
