@@ -68,9 +68,24 @@ export const sincronizarMeuPerfilSgp = createServerFn({ method: "POST" })
       sgp_status: sgpStatus,
       sgp_raw: r as unknown as Record<string, unknown>,
       sgp_synced_at: new Date().toISOString(),
+      motivo_status: contrato.motivo_status ?? null,
+      endereco_logradouro: contrato.endereco_logradouro ?? null,
+      endereco_numero: contrato.endereco_numero != null ? String(contrato.endereco_numero) : null,
+      endereco_bairro: contrato.endereco_bairro ?? null,
+      endereco_cidade: contrato.endereco_cidade ?? null,
+      endereco_uf: contrato.endereco_uf ?? null,
+      endereco_cep: contrato.endereco_cep ?? null,
+      telefones: Array.isArray(contrato.telefones) ? contrato.telefones : null,
+      emails: Array.isArray(contrato.emails) ? contrato.emails : null,
     };
     if (plano) update.plano = String(plano);
     if (contrato.razaoSocial) update.nome = String(contrato.razaoSocial);
+    if (Array.isArray(contrato.telefones) && contrato.telefones.length > 0) {
+      update.telefone = String(contrato.telefones[0]);
+    }
+    if (Array.isArray(contrato.emails) && contrato.emails.length > 0) {
+      update.email = String(contrato.emails[0]);
+    }
 
     const { error: updErr } = await supabase
       .from("profiles")
