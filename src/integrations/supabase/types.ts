@@ -145,8 +145,16 @@ export type Database = {
           cpf_cnpj: string | null
           created_at: string
           email: string | null
+          emails: string[] | null
+          endereco_bairro: string | null
+          endereco_cep: string | null
+          endereco_cidade: string | null
+          endereco_logradouro: string | null
+          endereco_numero: string | null
+          endereco_uf: string | null
           erp: string
           id: string
+          motivo_status: string | null
           nome: string
           plano: string | null
           sgp_cliente_id: string | null
@@ -156,14 +164,23 @@ export type Database = {
           sgp_synced_at: string | null
           status: string
           telefone: string | null
+          telefones: string[] | null
           updated_at: string
         }
         Insert: {
           cpf_cnpj?: string | null
           created_at?: string
           email?: string | null
+          emails?: string[] | null
+          endereco_bairro?: string | null
+          endereco_cep?: string | null
+          endereco_cidade?: string | null
+          endereco_logradouro?: string | null
+          endereco_numero?: string | null
+          endereco_uf?: string | null
           erp?: string
           id: string
+          motivo_status?: string | null
           nome?: string
           plano?: string | null
           sgp_cliente_id?: string | null
@@ -173,14 +190,23 @@ export type Database = {
           sgp_synced_at?: string | null
           status?: string
           telefone?: string | null
+          telefones?: string[] | null
           updated_at?: string
         }
         Update: {
           cpf_cnpj?: string | null
           created_at?: string
           email?: string | null
+          emails?: string[] | null
+          endereco_bairro?: string | null
+          endereco_cep?: string | null
+          endereco_cidade?: string | null
+          endereco_logradouro?: string | null
+          endereco_numero?: string | null
+          endereco_uf?: string | null
           erp?: string
           id?: string
+          motivo_status?: string | null
           nome?: string
           plano?: string | null
           sgp_cliente_id?: string | null
@@ -190,6 +216,7 @@ export type Database = {
           sgp_synced_at?: string | null
           status?: string
           telefone?: string | null
+          telefones?: string[] | null
           updated_at?: string
         }
         Relationships: []
