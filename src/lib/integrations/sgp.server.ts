@@ -28,6 +28,38 @@ export type SgpConsultaCliente = {
   [k: string]: unknown;
 };
 
+export type SgpTitulo = {
+  // SGP às vezes usa "demonstrativos" e às vezes "titulos"; normalizamos depois.
+  titulo_id?: number | string;
+  demonstrativo_id?: number | string;
+  documento?: string;
+  numerodocumento?: string;
+  valor?: number | string;
+  data_vencimento?: string;
+  datavencimento?: string;
+  data_pagamento?: string | null;
+  datapagamento?: string | null;
+  linhadigitavel?: string;
+  linha_digitavel?: string;
+  pix_qrcode?: string;
+  pix_emv?: string;
+  qrcode_pix?: string;
+  qrcode?: string;
+  link_pagamento?: string;
+  linkdoboleto?: string;
+  link_boleto?: string;
+  boleto_url?: string;
+  descricao?: string;
+  [k: string]: unknown;
+};
+
+export type SgpSegundaVia = {
+  msg?: string;
+  titulos?: SgpTitulo[];
+  demonstrativos?: SgpTitulo[];
+  [k: string]: unknown;
+};
+
 function getSgpEnv() {
   const raw = process.env.SGP_BASE_URL;
   const app = process.env.SGP_APP;
@@ -35,7 +67,6 @@ function getSgpEnv() {
   if (!raw) throw new Error("SGP_BASE_URL não configurado");
   if (!app) throw new Error("SGP_APP não configurado");
   if (!token) throw new Error("SGP_TOKEN não configurado");
-  // Aceita o secret salvo só como host ou com path: usamos apenas o origin.
   let baseUrl: string;
   try {
     baseUrl = new URL(raw).origin;
@@ -68,14 +99,47 @@ async function sgpPost<T>(path: string, body: Record<string, unknown>): Promise<
   return payload as T;
 }
 
-/** Limpa caracteres não numéricos do CPF/CNPJ. */
 export function onlyDigits(s: string) {
   return (s ?? "").replace(/\D+/g, "");
 }
 
-/** Consulta cliente pelo CPF/CNPJ. */
 export function sgpConsultaCliente(cpfcnpj: string) {
   return sgpPost<SgpConsultaCliente>("/api/ura/consultacliente/", {
     cpfcnpj: onlyDigits(cpfcnpj),
   });
+}
+
+/** Lista títulos (faturas) em aberto + recentes para o cpfcnpj/contrato. */
+export function sgpSegundaVia(args: { cpfcnpj?: string; contrato?: string | number }) {
+  const body: Record<string, unknown> = {};
+  if (args.cpfcnpj) body.cpfcnpj = onlyDigits(args.cpfcnpj);
+  if (args.contrato) body.contrato = args.contrato;
+  return sgpPost<SgpSegundaVia>("/api/ura/segundavia/", body);
+}
+
+/** Normaliza um título do SGP para o shape da tabela `faturas`. */
+export function normalizeTitulo(t: SgpTitulo) {
+  const id = t.titulo_id ?? t.demonstrativo_id ?? t.numerodocumento ?? t.documento;
+  const valor = Number(t.valor ?? 0);
+  const dataVencimento = String(t.data_vencimento ?? t.datavencimento ?? "").slice(0, 10);
+  const dataPagamentoRaw = t.data_pagamento ?? t.datapagamento ?? null;
+  const dataPagamento = dataPagamentoRaw ? String(dataPagamentoRaw).slice(0, 10) : null;
+  const linhaDigitavel = t.linhadigitavel ?? t.linha_digitavel ?? null;
+  const pixPayload = t.pix_emv ?? t.qrcode_pix ?? t.pix_qrcode ?? t.qrcode ?? null;
+  const linkPagamento = t.link_pagamento ?? t.linkdoboleto ?? t.link_boleto ?? t.boleto_url ?? null;
+  const descricao = (t.descricao as string | undefined) ?? "Mensalidade";
+  return {
+    sgp_titulo_id: id != null ? String(id) : null,
+    valor,
+    data_vencimento: dataVencimento,
+    data_pagamento: dataPagamento,
+    status: dataPagamento ? "pago" : "aberto",
+    descricao,
+    linha_digitavel: linhaDigitavel,
+    pix_payload: pixPayload,
+    pix_qrcode: pixPayload
+      ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(pixPayload)}`
+      : null,
+    link_pagamento: linkPagamento,
+  };
 }
