@@ -17,6 +17,7 @@ import { Route as AuthenticatedVelocidadeRouteImport } from './routes/_authentic
 import { Route as AuthenticatedSuporteRouteImport } from './routes/_authenticated/suporte'
 import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
 import { Route as AuthenticatedFinanceiroRouteImport } from './routes/_authenticated/financeiro'
+import { Route as ApiDebugSgpRouteImport } from './routes/api/_debug.sgp'
 import { Route as AuthenticatedSuporteNovoRouteImport } from './routes/_authenticated/suporte.novo'
 import { Route as AuthenticatedSuporteTicketIdRouteImport } from './routes/_authenticated/suporte.$ticketId'
 import { Route as AuthenticatedFinanceiroFaturaIdRouteImport } from './routes/_authenticated/financeiro.$faturaId'
@@ -60,6 +61,11 @@ const AuthenticatedFinanceiroRoute = AuthenticatedFinanceiroRouteImport.update({
   path: '/financeiro',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const ApiDebugSgpRoute = ApiDebugSgpRouteImport.update({
+  id: '/api/_debug/sgp',
+  path: '/api/sgp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedSuporteNovoRoute =
   AuthenticatedSuporteNovoRouteImport.update({
     id: '/novo',
@@ -90,6 +96,7 @@ export interface FileRoutesByFullPath {
   '/financeiro/$faturaId': typeof AuthenticatedFinanceiroFaturaIdRoute
   '/suporte/$ticketId': typeof AuthenticatedSuporteTicketIdRoute
   '/suporte/novo': typeof AuthenticatedSuporteNovoRoute
+  '/api/sgp': typeof ApiDebugSgpRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -102,6 +109,7 @@ export interface FileRoutesByTo {
   '/financeiro/$faturaId': typeof AuthenticatedFinanceiroFaturaIdRoute
   '/suporte/$ticketId': typeof AuthenticatedSuporteTicketIdRoute
   '/suporte/novo': typeof AuthenticatedSuporteNovoRoute
+  '/api/sgp': typeof ApiDebugSgpRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -116,6 +124,7 @@ export interface FileRoutesById {
   '/_authenticated/financeiro/$faturaId': typeof AuthenticatedFinanceiroFaturaIdRoute
   '/_authenticated/suporte/$ticketId': typeof AuthenticatedSuporteTicketIdRoute
   '/_authenticated/suporte/novo': typeof AuthenticatedSuporteNovoRoute
+  '/api/_debug/sgp': typeof ApiDebugSgpRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -130,6 +139,7 @@ export interface FileRouteTypes {
     | '/financeiro/$faturaId'
     | '/suporte/$ticketId'
     | '/suporte/novo'
+    | '/api/sgp'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -142,6 +152,7 @@ export interface FileRouteTypes {
     | '/financeiro/$faturaId'
     | '/suporte/$ticketId'
     | '/suporte/novo'
+    | '/api/sgp'
   id:
     | '__root__'
     | '/_authenticated'
@@ -155,12 +166,14 @@ export interface FileRouteTypes {
     | '/_authenticated/financeiro/$faturaId'
     | '/_authenticated/suporte/$ticketId'
     | '/_authenticated/suporte/novo'
+    | '/api/_debug/sgp'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
+  ApiDebugSgpRoute: typeof ApiDebugSgpRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -220,6 +233,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/financeiro'
       preLoaderRoute: typeof AuthenticatedFinanceiroRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/api/_debug/sgp': {
+      id: '/api/_debug/sgp'
+      path: '/api/sgp'
+      fullPath: '/api/sgp'
+      preLoaderRoute: typeof ApiDebugSgpRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/suporte/novo': {
       id: '/_authenticated/suporte/novo'
@@ -296,6 +316,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
+  ApiDebugSgpRoute: ApiDebugSgpRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
