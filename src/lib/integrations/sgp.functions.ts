@@ -100,3 +100,71 @@ export const sincronizarMeuPerfilSgp = createServerFn({ method: "POST" })
       plano: (update.plano as string | undefined) ?? null,
     };
   });
+
+/**
+ * Sincroniza as faturas do usuário logado com os títulos do SGP.
+ * Faz upsert por (cliente_id, sgp_titulo_id).
+ */
+export const sincronizarMinhasFaturasSgp = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+
+    const { data: profile, error: pErr } = await supabase
+      .from("profiles")
+      .select("cpf_cnpj, sgp_contrato_id")
+      .eq("id", userId)
+      .single();
+    if (pErr) throw new Error(pErr.message);
+    if (!profile?.cpf_cnpj) throw new Error("Cadastre seu CPF/CNPJ no perfil antes de sincronizar.");
+
+    const r = await sgpSegundaVia({
+      cpfcnpj: profile.cpf_cnpj,
+      contrato: profile.sgp_contrato_id ?? undefined,
+    });
+    const titulos = (r.titulos ?? r.demonstrativos ?? []) as Parameters<typeof normalizeTitulo>[0][];
+
+    let inseridas = 0;
+    let atualizadas = 0;
+    for (const t of titulos) {
+      const n = normalizeTitulo(t);
+      if (!n.sgp_titulo_id || !n.data_vencimento) continue;
+      const row = {
+        cliente_id: userId,
+        sgp_titulo_id: n.sgp_titulo_id,
+        valor: n.valor,
+        data_vencimento: n.data_vencimento,
+        data_pagamento: n.data_pagamento,
+        status: n.status,
+        descricao: n.descricao,
+        linha_digitavel: n.linha_digitavel,
+        pix_payload: n.pix_payload,
+        pix_qrcode: n.pix_qrcode,
+        link_pagamento: n.link_pagamento,
+        sgp_raw: t as unknown as Record<string, unknown>,
+      };
+
+      const { data: existing } = await supabase
+        .from("faturas")
+        .select("id")
+        .eq("cliente_id", userId)
+        .eq("sgp_titulo_id", n.sgp_titulo_id)
+        .maybeSingle();
+
+      if (existing?.id) {
+        const { error } = await supabase
+          .from("faturas")
+          .update(row as never)
+          .eq("id", existing.id);
+        if (error) throw new Error(error.message);
+        atualizadas++;
+      } else {
+        const { error } = await supabase.from("faturas").insert(row as never);
+        if (error) throw new Error(error.message);
+        inseridas++;
+      }
+    }
+
+    return { ok: true as const, total: titulos.length, inseridas, atualizadas };
+  });
+
