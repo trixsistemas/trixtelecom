@@ -1,7 +1,7 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { ArrowLeft, Copy, QrCode, FileText, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Copy, QrCode, FileText, CheckCircle2, CreditCard, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -15,9 +15,7 @@ export const Route = createFileRoute("/_authenticated/financeiro/$faturaId")({
 
 function FaturaPage() {
   const { faturaId } = Route.useParams();
-  const qc = useQueryClient();
-  const navigate = useNavigate();
-  const [tab, setTab] = useState<"pix" | "boleto">("pix");
+  const [tab, setTab] = useState<"pix" | "cartao" | "boleto">("pix");
 
   const { data: fatura, isLoading } = useQuery({
     queryKey: ["fatura", faturaId],
@@ -27,37 +25,19 @@ function FaturaPage() {
     },
   });
 
-  const gerarPix = useMutation({
-    mutationFn: async () => {
-      const payload = `00020126580014BR.GOV.BCB.PIX0136trix-${faturaId.slice(0, 8)}5204000053039865802BR5913TRIX ISP LTDA6009SAO PAULO62070503***6304ABCD`;
-      const qrcode = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(payload)}`;
-      const { error } = await supabase.from("faturas")
-        .update({ pix_payload: payload, pix_qrcode: qrcode })
-        .eq("id", faturaId);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["fatura", faturaId] }),
-  });
-
-  const simularPagamento = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase.from("faturas")
-        .update({ status: "pago", data_pagamento: new Date().toISOString().slice(0, 10), metodo_pagamento: tab })
-        .eq("id", faturaId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success("Pagamento confirmado!", { description: "Sua conexão foi liberada." });
-      qc.invalidateQueries();
-      navigate({ to: "/financeiro" });
-    },
-  });
-
   if (isLoading || !fatura) {
     return <div className="p-8 text-center text-muted-foreground">Carregando...</div>;
   }
 
   const isPaid = fatura.status === "pago";
+  const hasPix = Boolean(fatura.pix_payload);
+  const hasBoleto = Boolean(fatura.linha_digitavel);
+  const hasLink = Boolean(fatura.link_pagamento);
+
+  const copy = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success(`${label} copiado!`);
+  };
 
   return (
     <div className="max-w-2xl mx-auto p-4 md:p-8 space-y-6">
@@ -75,61 +55,113 @@ function FaturaPage() {
         </div>
         {isPaid && (
           <div className="mt-4 flex items-center gap-2 text-success text-sm font-medium">
-            <CheckCircle2 className="size-4" /> Paga em {new Date(fatura.data_pagamento! + "T00:00:00").toLocaleDateString("pt-BR")}
+            <CheckCircle2 className="size-4" />
+            Paga{fatura.data_pagamento ? ` em ${new Date(fatura.data_pagamento + "T00:00:00").toLocaleDateString("pt-BR")}` : ""}
           </div>
         )}
       </Card>
 
       {!isPaid && (
-        <Tabs value={tab} onValueChange={(v) => setTab(v as "pix" | "boleto")}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="pix"><QrCode className="size-4 mr-2" /> PIX</TabsTrigger>
-            <TabsTrigger value="boleto"><FileText className="size-4 mr-2" /> Boleto</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="pix" className="mt-4">
-            <Card className="p-6 text-center space-y-4">
-              {fatura.pix_qrcode ? (
-                <>
-                  <img src={fatura.pix_qrcode} alt="QR Code PIX" className="mx-auto rounded-lg border" />
-                  <div className="text-xs text-muted-foreground break-all bg-muted p-3 rounded font-mono">
-                    {fatura.pix_payload}
-                  </div>
-                  <Button variant="outline" className="w-full" onClick={() => {
-                    navigator.clipboard.writeText(fatura.pix_payload!);
-                    toast.success("Código PIX copiado!");
-                  }}>
-                    <Copy className="size-4 mr-2" /> Copiar código PIX
-                  </Button>
-                </>
-              ) : (
-                <Button className="w-full bg-gradient-brand text-white shadow-brand" onClick={() => gerarPix.mutate()} disabled={gerarPix.isPending}>
-                  {gerarPix.isPending ? "Gerando..." : "Gerar PIX"}
-                </Button>
-              )}
+        <>
+          {!hasPix && !hasBoleto && !hasLink && (
+            <Card className="p-6 text-center text-sm text-muted-foreground">
+              Nenhuma opção de pagamento disponível no momento. Tente sincronizar novamente na tela de Financeiro
+              ou entre em contato com o suporte.
             </Card>
-          </TabsContent>
+          )}
 
-          <TabsContent value="boleto" className="mt-4">
-            <Card className="p-6 space-y-3">
-              <div className="text-sm text-muted-foreground">Linha digitável (mock)</div>
-              <div className="font-mono text-sm bg-muted p-3 rounded break-all">
-                23793.38128 60082.190351 41085.901022 1 9{Math.floor(Number(fatura.valor) * 100).toString().padStart(10, "0")}
-              </div>
-              <Button variant="outline" className="w-full" onClick={() => toast.success("Boleto copiado!")}>
-                <Copy className="size-4 mr-2" /> Copiar linha digitável
-              </Button>
-            </Card>
-          </TabsContent>
+          {(hasPix || hasBoleto || hasLink) && (
+            <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="pix" disabled={!hasPix}>
+                  <QrCode className="size-4 mr-2" /> PIX
+                </TabsTrigger>
+                <TabsTrigger value="cartao" disabled={!hasLink}>
+                  <CreditCard className="size-4 mr-2" /> Cartão
+                </TabsTrigger>
+                <TabsTrigger value="boleto" disabled={!hasBoleto}>
+                  <FileText className="size-4 mr-2" /> Boleto
+                </TabsTrigger>
+              </TabsList>
 
-          <Button
-            className="w-full mt-4 bg-gradient-success text-white shadow-card"
-            onClick={() => simularPagamento.mutate()}
-            disabled={simularPagamento.isPending}
-          >
-            <CheckCircle2 className="size-4 mr-2" /> Simular pagamento
-          </Button>
-        </Tabs>
+              <TabsContent value="pix" className="mt-4">
+                <Card className="p-6 text-center space-y-4">
+                  {hasPix ? (
+                    <>
+                      {fatura.pix_qrcode && (
+                        <img src={fatura.pix_qrcode} alt="QR Code PIX" className="mx-auto rounded-lg border" />
+                      )}
+                      <div className="text-xs text-muted-foreground break-all bg-muted p-3 rounded font-mono">
+                        {fatura.pix_payload}
+                      </div>
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => copy(fatura.pix_payload!, "Código PIX")}
+                      >
+                        <Copy className="size-4 mr-2" /> Copiar código PIX
+                      </Button>
+                    </>
+                  ) : (
+                    <div className="text-sm text-muted-foreground">PIX indisponível para esta fatura.</div>
+                  )}
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="cartao" className="mt-4">
+                <Card className="p-6 space-y-4 text-center">
+                  {hasLink ? (
+                    <>
+                      <p className="text-sm text-muted-foreground">
+                        Você será redirecionado para a página segura do provedor para pagar com cartão de crédito ou débito.
+                      </p>
+                      <a href={fatura.link_pagamento!} target="_blank" rel="noopener noreferrer">
+                        <Button className="w-full bg-gradient-brand text-white shadow-brand">
+                          <ExternalLink className="size-4 mr-2" /> Pagar com cartão
+                        </Button>
+                      </a>
+                    </>
+                  ) : (
+                    <div className="text-sm text-muted-foreground">
+                      Pagamento por cartão indisponível para esta fatura.
+                    </div>
+                  )}
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="boleto" className="mt-4">
+                <Card className="p-6 space-y-3">
+                  {hasBoleto ? (
+                    <>
+                      <div className="text-sm text-muted-foreground">Linha digitável</div>
+                      <div className="font-mono text-sm bg-muted p-3 rounded break-all">
+                        {fatura.linha_digitavel}
+                      </div>
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => copy(fatura.linha_digitavel!, "Linha digitável")}
+                      >
+                        <Copy className="size-4 mr-2" /> Copiar linha digitável
+                      </Button>
+                      {hasLink && (
+                        <a href={fatura.link_pagamento!} target="_blank" rel="noopener noreferrer">
+                          <Button variant="ghost" className="w-full">
+                            <ExternalLink className="size-4 mr-2" /> Abrir boleto
+                          </Button>
+                        </a>
+                      )}
+                    </>
+                  ) : (
+                    <div className="text-sm text-muted-foreground text-center">
+                      Boleto indisponível para esta fatura.
+                    </div>
+                  )}
+                </Card>
+              </TabsContent>
+            </Tabs>
+          )}
+        </>
       )}
     </div>
   );
