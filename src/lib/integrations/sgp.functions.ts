@@ -124,6 +124,13 @@ export const sincronizarMinhasFaturasSgp = createServerFn({ method: "POST" })
     });
     const titulos = (r.titulos ?? r.demonstrativos ?? []) as Parameters<typeof normalizeTitulo>[0][];
 
+    // Remove faturas mock (sem sgp_titulo_id) deste cliente — agora temos dados reais.
+    await supabase
+      .from("faturas")
+      .delete()
+      .eq("cliente_id", userId)
+      .is("sgp_titulo_id", null);
+
     let inseridas = 0;
     let atualizadas = 0;
     for (const t of titulos) {
