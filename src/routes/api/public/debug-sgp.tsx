@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { sgpProbe } from "@/lib/integrations/sgp.debug.functions";
 
-export const Route = createFileRoute("/api/debug-sgp")({
+export const Route = createFileRoute("/api/public/debug-sgp")({
   server: {
     handlers: {
       POST: async ({ request }) => {

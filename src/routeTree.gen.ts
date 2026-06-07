@@ -13,11 +13,11 @@ import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
-import { Route as ApiDebugSgpRouteImport } from './routes/api/debug-sgp'
 import { Route as AuthenticatedVelocidadeRouteImport } from './routes/_authenticated/velocidade'
 import { Route as AuthenticatedSuporteRouteImport } from './routes/_authenticated/suporte'
 import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
 import { Route as AuthenticatedFinanceiroRouteImport } from './routes/_authenticated/financeiro'
+import { Route as ApiPublicDebugSgpRouteImport } from './routes/api/public/debug-sgp'
 import { Route as AuthenticatedSuporteNovoRouteImport } from './routes/_authenticated/suporte.novo'
 import { Route as AuthenticatedSuporteTicketIdRouteImport } from './routes/_authenticated/suporte.$ticketId'
 import { Route as AuthenticatedFinanceiroFaturaIdRouteImport } from './routes/_authenticated/financeiro.$faturaId'
@@ -41,11 +41,6 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const ApiDebugSgpRoute = ApiDebugSgpRouteImport.update({
-  id: '/api/debug-sgp',
-  path: '/api/debug-sgp',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthenticatedVelocidadeRoute = AuthenticatedVelocidadeRouteImport.update({
   id: '/velocidade',
   path: '/velocidade',
@@ -65,6 +60,11 @@ const AuthenticatedFinanceiroRoute = AuthenticatedFinanceiroRouteImport.update({
   id: '/financeiro',
   path: '/financeiro',
   getParentRoute: () => AuthenticatedRoute,
+} as any)
+const ApiPublicDebugSgpRoute = ApiPublicDebugSgpRouteImport.update({
+  id: '/api/public/debug-sgp',
+  path: '/api/public/debug-sgp',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedSuporteNovoRoute =
   AuthenticatedSuporteNovoRouteImport.update({
@@ -93,10 +93,10 @@ export interface FileRoutesByFullPath {
   '/perfil': typeof AuthenticatedPerfilRoute
   '/suporte': typeof AuthenticatedSuporteRouteWithChildren
   '/velocidade': typeof AuthenticatedVelocidadeRoute
-  '/api/debug-sgp': typeof ApiDebugSgpRoute
   '/financeiro/$faturaId': typeof AuthenticatedFinanceiroFaturaIdRoute
   '/suporte/$ticketId': typeof AuthenticatedSuporteTicketIdRoute
   '/suporte/novo': typeof AuthenticatedSuporteNovoRoute
+  '/api/public/debug-sgp': typeof ApiPublicDebugSgpRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -105,11 +105,11 @@ export interface FileRoutesByTo {
   '/perfil': typeof AuthenticatedPerfilRoute
   '/suporte': typeof AuthenticatedSuporteRouteWithChildren
   '/velocidade': typeof AuthenticatedVelocidadeRoute
-  '/api/debug-sgp': typeof ApiDebugSgpRoute
   '/': typeof AuthenticatedIndexRoute
   '/financeiro/$faturaId': typeof AuthenticatedFinanceiroFaturaIdRoute
   '/suporte/$ticketId': typeof AuthenticatedSuporteTicketIdRoute
   '/suporte/novo': typeof AuthenticatedSuporteNovoRoute
+  '/api/public/debug-sgp': typeof ApiPublicDebugSgpRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -120,11 +120,11 @@ export interface FileRoutesById {
   '/_authenticated/perfil': typeof AuthenticatedPerfilRoute
   '/_authenticated/suporte': typeof AuthenticatedSuporteRouteWithChildren
   '/_authenticated/velocidade': typeof AuthenticatedVelocidadeRoute
-  '/api/debug-sgp': typeof ApiDebugSgpRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/financeiro/$faturaId': typeof AuthenticatedFinanceiroFaturaIdRoute
   '/_authenticated/suporte/$ticketId': typeof AuthenticatedSuporteTicketIdRoute
   '/_authenticated/suporte/novo': typeof AuthenticatedSuporteNovoRoute
+  '/api/public/debug-sgp': typeof ApiPublicDebugSgpRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -136,10 +136,10 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/suporte'
     | '/velocidade'
-    | '/api/debug-sgp'
     | '/financeiro/$faturaId'
     | '/suporte/$ticketId'
     | '/suporte/novo'
+    | '/api/public/debug-sgp'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -148,11 +148,11 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/suporte'
     | '/velocidade'
-    | '/api/debug-sgp'
     | '/'
     | '/financeiro/$faturaId'
     | '/suporte/$ticketId'
     | '/suporte/novo'
+    | '/api/public/debug-sgp'
   id:
     | '__root__'
     | '/_authenticated'
@@ -162,18 +162,18 @@ export interface FileRouteTypes {
     | '/_authenticated/perfil'
     | '/_authenticated/suporte'
     | '/_authenticated/velocidade'
-    | '/api/debug-sgp'
     | '/_authenticated/'
     | '/_authenticated/financeiro/$faturaId'
     | '/_authenticated/suporte/$ticketId'
     | '/_authenticated/suporte/novo'
+    | '/api/public/debug-sgp'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
-  ApiDebugSgpRoute: typeof ApiDebugSgpRoute
+  ApiPublicDebugSgpRoute: typeof ApiPublicDebugSgpRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -206,13 +206,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/api/debug-sgp': {
-      id: '/api/debug-sgp'
-      path: '/api/debug-sgp'
-      fullPath: '/api/debug-sgp'
-      preLoaderRoute: typeof ApiDebugSgpRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_authenticated/velocidade': {
       id: '/_authenticated/velocidade'
       path: '/velocidade'
@@ -240,6 +233,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/financeiro'
       preLoaderRoute: typeof AuthenticatedFinanceiroRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/api/public/debug-sgp': {
+      id: '/api/public/debug-sgp'
+      path: '/api/public/debug-sgp'
+      fullPath: '/api/public/debug-sgp'
+      preLoaderRoute: typeof ApiPublicDebugSgpRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/suporte/novo': {
       id: '/_authenticated/suporte/novo'
@@ -316,7 +316,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
-  ApiDebugSgpRoute: ApiDebugSgpRoute,
+  ApiPublicDebugSgpRoute: ApiPublicDebugSgpRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
