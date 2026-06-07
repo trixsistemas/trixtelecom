@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { sgpConsultaCliente, onlyDigits } from "./sgp.server";
+import { sgpConsultaCliente, sgpSegundaVia, normalizeTitulo, onlyDigits } from "./sgp.server";
 
 /**
  * Valida se um CPF/CNPJ existe no SGP — chamado no cadastro,
