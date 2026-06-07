@@ -24,9 +24,12 @@ export type Database = {
           descricao: string | null
           id: string
           linha_digitavel: string | null
+          link_pagamento: string | null
           metodo_pagamento: string | null
           pix_payload: string | null
           pix_qrcode: string | null
+          sgp_raw: Json | null
+          sgp_titulo_id: string | null
           status: string
           updated_at: string
           valor: number
@@ -40,9 +43,12 @@ export type Database = {
           descricao?: string | null
           id?: string
           linha_digitavel?: string | null
+          link_pagamento?: string | null
           metodo_pagamento?: string | null
           pix_payload?: string | null
           pix_qrcode?: string | null
+          sgp_raw?: Json | null
+          sgp_titulo_id?: string | null
           status?: string
           updated_at?: string
           valor: number
@@ -56,9 +62,12 @@ export type Database = {
           descricao?: string | null
           id?: string
           linha_digitavel?: string | null
+          link_pagamento?: string | null
           metodo_pagamento?: string | null
           pix_payload?: string | null
           pix_qrcode?: string | null
+          sgp_raw?: Json | null
+          sgp_titulo_id?: string | null
           status?: string
           updated_at?: string
           valor?: number
