@@ -50,11 +50,10 @@ function TicketPage() {
 
   const fechar = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("tickets")
-        .update({ status: "fechado", closed_at: new Date().toISOString() })
-        .eq("id", ticketId);
+      const { error } = await supabase.rpc("fechar_ticket", { _ticket_id: ticketId });
       if (error) throw error;
     },
+
     onSuccess: () => {
       toast.success("Chamado fechado");
       qc.invalidateQueries();
