@@ -1,6 +1,7 @@
 @import "tailwindcss" source(none);
-@source "../src";
 @import "tw-animate-css";
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+@source "../src";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -10,7 +11,6 @@
  * confiança. Azul profundo + ciano elétrico.
  * =========================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
 @theme inline {
   --font-display: 'Sora', system-ui, sans-serif;
