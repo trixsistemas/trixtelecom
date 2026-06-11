@@ -371,7 +371,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      fechar_ticket: { Args: { _ticket_id: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
