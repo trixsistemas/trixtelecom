@@ -99,6 +99,24 @@ async function sgpPost<T>(path: string, body: Record<string, unknown>): Promise<
   return payload as T;
 }
 
+async function sgpPostWithFallback<T>(paths: string[], body: Record<string, unknown>): Promise<T> {
+  let lastNotFoundError: Error | undefined;
+
+  for (const path of paths) {
+    try {
+      return await sgpPost<T>(path, body);
+    } catch (error) {
+      if (error instanceof Error && /\b404\b/.test(error.message)) {
+        lastNotFoundError = error;
+        continue;
+      }
+      throw error;
+    }
+  }
+
+  throw lastNotFoundError ?? new Error("SGP: nenhum endpoint de faturas respondeu corretamente.");
+}
+
 export function onlyDigits(s: string) {
   return (s ?? "").replace(/\D+/g, "");
 }
@@ -109,12 +127,16 @@ export function sgpConsultaCliente(cpfcnpj: string) {
   });
 }
 
-/** Lista títulos (faturas) em aberto + recentes para o cpfcnpj/contrato. */
+/** Lista títulos/faturas do cliente usando a rota atual do SGP e fallback legado. */
 export function sgpSegundaVia(args: { cpfcnpj?: string; contrato?: string | number }) {
   const body: Record<string, unknown> = {};
   if (args.cpfcnpj) body.cpfcnpj = onlyDigits(args.cpfcnpj);
   if (args.contrato) body.contrato = args.contrato;
-  return sgpPost<SgpSegundaVia>("/api/ura/segundavia/", body);
+  return sgpPostWithFallback<SgpSegundaVia>([
+    "/api/ura/titulos/",
+    "/api/ura/fatura2via/",
+    "/api/ura/segundavia/",
+  ], body);
 }
 
 /** Normaliza um título do SGP para o shape da tabela `faturas`. */
