@@ -124,8 +124,11 @@ export const sincronizarMinhasFaturasSgp = createServerFn({ method: "POST" })
     });
     const titulos = (r.titulos ?? r.demonstrativos ?? []) as Parameters<typeof normalizeTitulo>[0][];
 
+    // Mutações em faturas só podem ocorrer via service_role (RLS bloqueia cliente).
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
     // Remove faturas mock (sem sgp_titulo_id) deste cliente — agora temos dados reais.
-    await supabase
+    await supabaseAdmin
       .from("faturas")
       .delete()
       .eq("cliente_id", userId)
@@ -151,7 +154,7 @@ export const sincronizarMinhasFaturasSgp = createServerFn({ method: "POST" })
         sgp_raw: t as unknown as Record<string, unknown>,
       };
 
-      const { data: existing } = await supabase
+      const { data: existing } = await supabaseAdmin
         .from("faturas")
         .select("id")
         .eq("cliente_id", userId)
@@ -159,18 +162,19 @@ export const sincronizarMinhasFaturasSgp = createServerFn({ method: "POST" })
         .maybeSingle();
 
       if (existing?.id) {
-        const { error } = await supabase
+        const { error } = await supabaseAdmin
           .from("faturas")
           .update(row as never)
           .eq("id", existing.id);
         if (error) throw new Error(error.message);
         atualizadas++;
       } else {
-        const { error } = await supabase.from("faturas").insert(row as never);
+        const { error } = await supabaseAdmin.from("faturas").insert(row as never);
         if (error) throw new Error(error.message);
         inseridas++;
       }
     }
+
 
     return { ok: true as const, total: titulos.length, inseridas, atualizadas };
   });
