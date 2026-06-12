@@ -89,7 +89,8 @@ function PerfilPage() {
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
             <Label>CPF/CNPJ</Label>
-            <Input value={form.cpf_cnpj} onChange={(e) => setForm({ ...form, cpf_cnpj: e.target.value })} />
+            <Input value={form.cpf_cnpj} readOnly disabled />
+            <p className="text-xs text-muted-foreground">Para corrigir o documento, fale com o suporte.</p>
           </div>
           <div className="space-y-2">
             <Label>Telefone</Label>
