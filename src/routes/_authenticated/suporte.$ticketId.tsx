@@ -25,9 +25,12 @@ function TicketPage() {
   const { data } = useQuery({
     queryKey: ["ticket", ticketId],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return { ticket: null, mensagens: [] };
+
       const [{ data: ticket }, { data: mensagens }] = await Promise.all([
-        supabase.from("tickets").select("*").eq("id", ticketId).single(),
-        supabase.from("ticket_mensagens").select("*").eq("ticket_id", ticketId).order("created_at", { ascending: true }),
+        supabase.from("tickets").select("*").eq("id", ticketId).eq("cliente_id", user.id).maybeSingle(),
+        supabase.from("ticket_mensagens").select("*").eq("ticket_id", ticketId).eq("cliente_id", user.id).order("created_at", { ascending: true }),
       ]);
       return { ticket, mensagens: mensagens ?? [] };
     },
