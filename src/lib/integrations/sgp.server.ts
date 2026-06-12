@@ -1,3 +1,5 @@
+import QRCode from "qrcode";
+
 // Server-only SGP (Sistema de Gestão de Provedores) client.
 // Docs: https://sgp.tsmx.com.br/integracao/
 
@@ -169,4 +171,12 @@ export function normalizeTitulo(t: SgpTitulo) {
       : null,
     link_pagamento: linkPagamento,
   };
+}
+
+export async function buildPixQrCodeDataUrl(pixPayload: string) {
+  return QRCode.toDataURL(pixPayload, {
+    errorCorrectionLevel: "M",
+    margin: 1,
+    width: 300,
+  });
 }

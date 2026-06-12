@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { sgpConsultaCliente, sgpSegundaVia, normalizeTitulo, onlyDigits } from "./sgp.server";
+import { buildPixQrCodeDataUrl, sgpConsultaCliente, sgpSegundaVia, normalizeTitulo, onlyDigits } from "./sgp.server";
 
 /**
  * Valida se um CPF/CNPJ existe no SGP — chamado no cadastro,
@@ -160,7 +160,7 @@ export const sincronizarMinhasFaturasSgp = createServerFn({ method: "POST" })
         descricao: n.descricao,
         linha_digitavel: n.linha_digitavel,
         pix_payload: n.pix_payload,
-        pix_qrcode: n.pix_qrcode,
+        pix_qrcode: n.pix_payload ? await buildPixQrCodeDataUrl(n.pix_payload) : null,
         link_pagamento: n.link_pagamento,
         sgp_raw: t as unknown as Record<string, unknown>,
       };
