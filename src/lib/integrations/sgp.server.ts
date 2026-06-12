@@ -1,3 +1,5 @@
+import QRCode from "qrcode";
+
 // Server-only SGP (Sistema de Gestão de Provedores) client.
 // Docs: https://sgp.tsmx.com.br/integracao/
 
@@ -88,13 +90,15 @@ async function sgpPost<T>(path: string, body: Record<string, unknown>): Promise<
   try {
     payload = text ? JSON.parse(text) : {};
   } catch {
-    throw new Error(`SGP ${path}: resposta inválida (${res.status}): ${text.slice(0, 200)}`);
+    console.error("SGP invalid response", { path, status: res.status, preview: text.slice(0, 200) });
+    throw new Error("SGP_REQUEST_FAILED");
   }
   if (!res.ok) {
     const msg = (payload as { msg?: string; detail?: string })?.msg
       ?? (payload as { detail?: string })?.detail
       ?? `HTTP ${res.status}`;
-    throw new Error(`SGP ${path}: ${msg}`);
+    console.error("SGP request failed", { path, status: res.status, message: msg });
+    throw new Error("SGP_REQUEST_FAILED");
   }
   return payload as T;
 }
@@ -114,7 +118,10 @@ async function sgpPostWithFallback<T>(paths: string[], body: Record<string, unkn
     }
   }
 
-  throw lastNotFoundError ?? new Error("SGP: nenhum endpoint de faturas respondeu corretamente.");
+  if (lastNotFoundError) {
+    console.error("SGP invoice endpoints not found", { triedPaths: paths });
+  }
+  throw new Error("SGP_REQUEST_FAILED");
 }
 
 export function onlyDigits(s: string) {
@@ -164,4 +171,12 @@ export function normalizeTitulo(t: SgpTitulo) {
       : null,
     link_pagamento: linkPagamento,
   };
+}
+
+export async function buildPixQrCodeDataUrl(pixPayload: string) {
+  return QRCode.toDataURL(pixPayload, {
+    errorCorrectionLevel: "M",
+    margin: 1,
+    width: 300,
+  });
 }

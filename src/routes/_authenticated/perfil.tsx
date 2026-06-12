@@ -1,9 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { User, LogOut, ShieldCheck, Wifi, MapPin, Phone, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { updateMyProfile } from "@/lib/profile.functions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +20,7 @@ function PerfilPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [form, setForm] = useState({ nome: "", telefone: "", cpf_cnpj: "" });
+  const salvarPerfil = useServerFn(updateMyProfile);
 
   const { data: profile } = useQuery({
     queryKey: ["profile"],
@@ -35,8 +38,7 @@ function PerfilPage() {
 
   const salvar = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("profiles").update(form).eq("id", profile!.id);
-      if (error) throw error;
+      await salvarPerfil({ data: form });
     },
     onSuccess: () => {
       toast.success("Perfil atualizado");
@@ -87,7 +89,8 @@ function PerfilPage() {
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
             <Label>CPF/CNPJ</Label>
-            <Input value={form.cpf_cnpj} onChange={(e) => setForm({ ...form, cpf_cnpj: e.target.value })} />
+            <Input value={form.cpf_cnpj} readOnly disabled />
+            <p className="text-xs text-muted-foreground">Para corrigir o documento, fale com o suporte.</p>
           </div>
           <div className="space-y-2">
             <Label>Telefone</Label>

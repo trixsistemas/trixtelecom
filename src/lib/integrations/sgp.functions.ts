@@ -1,7 +1,26 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { createHash } from "crypto";
+import { getRequest } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { sgpConsultaCliente, sgpSegundaVia, normalizeTitulo, onlyDigits } from "./sgp.server";
+import { buildPixQrCodeDataUrl, sgpConsultaCliente, sgpSegundaVia, normalizeTitulo, onlyDigits } from "./sgp.server";
+
+const LOOKUP_WINDOW_MINUTES = 10;
+const LOOKUP_MAX_ATTEMPTS_PER_IP = 15;
+
+function sha256(input: string) {
+  return createHash("sha256").update(input).digest("hex");
+}
+
+function getRequestIp() {
+  const request = getRequest();
+  const forwarded = request?.headers.get("cf-connecting-ip")
+    ?? request?.headers.get("x-forwarded-for")?.split(",")[0]
+    ?? request?.headers.get("x-real-ip")
+    ?? "unknown";
+
+  return forwarded.trim();
+}
 
 /**
  * Valida se um CPF/CNPJ existe no SGP — chamado no cadastro,
@@ -18,6 +37,36 @@ export const validarClienteSgp = createServerFn({ method: "POST" })
     if (doc.length !== 11 && doc.length !== 14) {
       return { found: false as const, reason: "CPF/CNPJ inválido" };
     }
+
+    const ipHash = sha256(getRequestIp());
+    const documentHash = sha256(doc);
+    const windowStart = new Date(Date.now() - LOOKUP_WINDOW_MINUTES * 60_000).toISOString();
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { count, error: countError } = await supabaseAdmin
+      .from("signup_lookup_attempts")
+      .select("id", { count: "exact", head: true })
+      .eq("ip_hash", ipHash)
+      .gte("created_at", windowStart);
+
+    if (countError) {
+      console.error("signup lookup count failed", countError);
+      return { found: false as const, reason: "Não foi possível verificar o documento no sistema do provedor." };
+    }
+
+    if ((count ?? 0) >= LOOKUP_MAX_ATTEMPTS_PER_IP) {
+      return { found: false as const, reason: "Muitas tentativas. Aguarde alguns minutos e tente novamente." };
+    }
+
+    const { error: insertAttemptError } = await supabaseAdmin
+      .from("signup_lookup_attempts")
+      .insert({ ip_hash: ipHash, document_hash: documentHash });
+
+    if (insertAttemptError) {
+      console.error("signup lookup insert failed", insertAttemptError);
+      return { found: false as const, reason: "Não foi possível verificar o documento no sistema do provedor." };
+    }
+
     try {
       const r = await sgpConsultaCliente(doc);
       const contrato = r.contratos?.[0];
@@ -26,13 +75,10 @@ export const validarClienteSgp = createServerFn({ method: "POST" })
       }
       return {
         found: true as const,
-        nome: String(contrato.razaoSocial ?? ""),
-        status: String(contrato.contratoStatusDisplay ?? contrato.contratoStatus ?? ""),
       };
     } catch (err) {
       console.error("validarClienteSgp", err);
-      const msg = err instanceof Error ? err.message : "Erro desconhecido ao consultar o SGP";
-      return { found: false as const, reason: msg };
+      return { found: false as const, reason: "Não foi possível verificar o documento no sistema do provedor." };
     }
   });
 
@@ -52,7 +98,13 @@ export const sincronizarMeuPerfilSgp = createServerFn({ method: "POST" })
     if (profileErr) throw new Error(profileErr.message);
     if (!profile?.cpf_cnpj) throw new Error("Cadastre seu CPF/CNPJ no perfil antes de sincronizar.");
 
-    const r = await sgpConsultaCliente(profile.cpf_cnpj);
+    let r;
+    try {
+      r = await sgpConsultaCliente(profile.cpf_cnpj);
+    } catch (error) {
+      console.error("sincronizarMeuPerfilSgp", error);
+      throw new Error("Falha ao sincronizar seus dados agora. Tente novamente em instantes.");
+    }
     const contrato = r.contratos?.[0];
     if (!contrato) throw new Error("Cliente não encontrado no SGP.");
 
@@ -87,7 +139,9 @@ export const sincronizarMeuPerfilSgp = createServerFn({ method: "POST" })
       update.email = String(contrato.emails[0]);
     }
 
-    const { error: updErr } = await supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { error: updErr } = await supabaseAdmin
       .from("profiles")
       .update(update as never)
       .eq("id", userId);
@@ -118,10 +172,16 @@ export const sincronizarMinhasFaturasSgp = createServerFn({ method: "POST" })
     if (pErr) throw new Error(pErr.message);
     if (!profile?.cpf_cnpj) throw new Error("Cadastre seu CPF/CNPJ no perfil antes de sincronizar.");
 
-    const r = await sgpSegundaVia({
-      cpfcnpj: profile.cpf_cnpj,
-      contrato: profile.sgp_contrato_id ?? undefined,
-    });
+    let r;
+    try {
+      r = await sgpSegundaVia({
+        cpfcnpj: profile.cpf_cnpj,
+        contrato: profile.sgp_contrato_id ?? undefined,
+      });
+    } catch (error) {
+      console.error("sincronizarMinhasFaturasSgp", error);
+      throw new Error("Falha ao carregar suas faturas agora. Tente novamente em instantes.");
+    }
     const titulos = (r.titulos ?? r.demonstrativos ?? []) as Parameters<typeof normalizeTitulo>[0][];
 
     // Mutações em faturas só podem ocorrer via service_role (RLS bloqueia cliente).
@@ -149,7 +209,7 @@ export const sincronizarMinhasFaturasSgp = createServerFn({ method: "POST" })
         descricao: n.descricao,
         linha_digitavel: n.linha_digitavel,
         pix_payload: n.pix_payload,
-        pix_qrcode: n.pix_qrcode,
+        pix_qrcode: n.pix_payload ? await buildPixQrCodeDataUrl(n.pix_payload) : null,
         link_pagamento: n.link_pagamento,
         sgp_raw: t as unknown as Record<string, unknown>,
       };

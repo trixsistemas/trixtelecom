@@ -20,7 +20,15 @@ function FaturaPage() {
   const { data: fatura, isLoading } = useQuery({
     queryKey: ["fatura", faturaId],
     queryFn: async () => {
-      const { data } = await supabase.from("faturas").select("*").eq("id", faturaId).single();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data } = await supabase
+        .from("faturas")
+        .select("*")
+        .eq("id", faturaId)
+        .eq("cliente_id", user.id)
+        .maybeSingle();
       return data;
     },
   });
