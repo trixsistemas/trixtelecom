@@ -31,27 +31,39 @@ export type SgpConsultaCliente = {
 };
 
 export type SgpTitulo = {
-  // SGP às vezes usa "demonstrativos" e às vezes "titulos"; normalizamos depois.
+  // SGP retorna alguns campos em camelCase e outros em snake_case dependendo da rota.
+  id?: number | string;
   titulo_id?: number | string;
   demonstrativo_id?: number | string;
   documento?: string;
   numerodocumento?: string;
+  numeroDocumento?: number | string;
   valor?: number | string;
+  valorCorrigido?: number | string;
   data_vencimento?: string;
   datavencimento?: string;
+  dataVencimento?: string;
   data_pagamento?: string | null;
   datapagamento?: string | null;
+  dataPagamento?: string | null;
+  dataCancelamento?: string | null;
+  status?: string;
   linhadigitavel?: string;
   linha_digitavel?: string;
+  linhaDigitavel?: string;
   pix_qrcode?: string;
   pix_emv?: string;
   qrcode_pix?: string;
   qrcode?: string;
+  codigoPix?: string;
   link_pagamento?: string;
   linkdoboleto?: string;
   link_boleto?: string;
   boleto_url?: string;
+  link?: string;
+  link_cobranca?: string;
   descricao?: string;
+  demonstrativo?: string;
   [k: string]: unknown;
 };
 
