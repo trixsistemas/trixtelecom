@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { sincronizarMinhasFaturasSgp } from "@/lib/integrations/sgp.functions";
 
-export const Route = createFileRoute("/_authenticated/financeiro")({
+export const Route = createFileRoute("/_authenticated/financeiro/")({
   head: () => ({ meta: [{ title: "Financeiro — TRIX ISP" }] }),
   component: FinanceiroPage,
 });
