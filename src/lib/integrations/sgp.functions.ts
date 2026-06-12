@@ -26,13 +26,10 @@ export const validarClienteSgp = createServerFn({ method: "POST" })
       }
       return {
         found: true as const,
-        nome: String(contrato.razaoSocial ?? ""),
-        status: String(contrato.contratoStatusDisplay ?? contrato.contratoStatus ?? ""),
       };
     } catch (err) {
       console.error("validarClienteSgp", err);
-      const msg = err instanceof Error ? err.message : "Erro desconhecido ao consultar o SGP";
-      return { found: false as const, reason: msg };
+      return { found: false as const, reason: "Não foi possível verificar o documento no sistema do provedor." };
     }
   });
 
@@ -52,7 +49,13 @@ export const sincronizarMeuPerfilSgp = createServerFn({ method: "POST" })
     if (profileErr) throw new Error(profileErr.message);
     if (!profile?.cpf_cnpj) throw new Error("Cadastre seu CPF/CNPJ no perfil antes de sincronizar.");
 
-    const r = await sgpConsultaCliente(profile.cpf_cnpj);
+    let r;
+    try {
+      r = await sgpConsultaCliente(profile.cpf_cnpj);
+    } catch (error) {
+      console.error("sincronizarMeuPerfilSgp", error);
+      throw new Error("Falha ao sincronizar seus dados agora. Tente novamente em instantes.");
+    }
     const contrato = r.contratos?.[0];
     if (!contrato) throw new Error("Cliente não encontrado no SGP.");
 
@@ -87,7 +90,9 @@ export const sincronizarMeuPerfilSgp = createServerFn({ method: "POST" })
       update.email = String(contrato.emails[0]);
     }
 
-    const { error: updErr } = await supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { error: updErr } = await supabaseAdmin
       .from("profiles")
       .update(update as never)
       .eq("id", userId);
@@ -118,10 +123,16 @@ export const sincronizarMinhasFaturasSgp = createServerFn({ method: "POST" })
     if (pErr) throw new Error(pErr.message);
     if (!profile?.cpf_cnpj) throw new Error("Cadastre seu CPF/CNPJ no perfil antes de sincronizar.");
 
-    const r = await sgpSegundaVia({
-      cpfcnpj: profile.cpf_cnpj,
-      contrato: profile.sgp_contrato_id ?? undefined,
-    });
+    let r;
+    try {
+      r = await sgpSegundaVia({
+        cpfcnpj: profile.cpf_cnpj,
+        contrato: profile.sgp_contrato_id ?? undefined,
+      });
+    } catch (error) {
+      console.error("sincronizarMinhasFaturasSgp", error);
+      throw new Error("Falha ao carregar suas faturas agora. Tente novamente em instantes.");
+    }
     const titulos = (r.titulos ?? r.demonstrativos ?? []) as Parameters<typeof normalizeTitulo>[0][];
 
     // Mutações em faturas só podem ocorrer via service_role (RLS bloqueia cliente).
