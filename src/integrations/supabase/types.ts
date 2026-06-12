@@ -230,6 +230,27 @@ export type Database = {
         }
         Relationships: []
       }
+      signup_lookup_attempts: {
+        Row: {
+          created_at: string
+          document_hash: string
+          id: string
+          ip_hash: string
+        }
+        Insert: {
+          created_at?: string
+          document_hash: string
+          id?: string
+          ip_hash: string
+        }
+        Update: {
+          created_at?: string
+          document_hash?: string
+          id?: string
+          ip_hash?: string
+        }
+        Relationships: []
+      }
       teste_velocidade: {
         Row: {
           cliente_id: string
