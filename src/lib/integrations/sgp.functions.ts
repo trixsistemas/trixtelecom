@@ -1,7 +1,26 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { createHash } from "crypto";
+import { getRequest } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { buildPixQrCodeDataUrl, sgpConsultaCliente, sgpSegundaVia, normalizeTitulo, onlyDigits } from "./sgp.server";
+
+const LOOKUP_WINDOW_MINUTES = 10;
+const LOOKUP_MAX_ATTEMPTS_PER_IP = 15;
+
+function sha256(input: string) {
+  return createHash("sha256").update(input).digest("hex");
+}
+
+function getRequestIp() {
+  const request = getRequest();
+  const forwarded = request?.headers.get("cf-connecting-ip")
+    ?? request?.headers.get("x-forwarded-for")?.split(",")[0]
+    ?? request?.headers.get("x-real-ip")
+    ?? "unknown";
+
+  return forwarded.trim();
+}
 
 /**
  * Valida se um CPF/CNPJ existe no SGP — chamado no cadastro,
@@ -18,6 +37,36 @@ export const validarClienteSgp = createServerFn({ method: "POST" })
     if (doc.length !== 11 && doc.length !== 14) {
       return { found: false as const, reason: "CPF/CNPJ inválido" };
     }
+
+    const ipHash = sha256(getRequestIp());
+    const documentHash = sha256(doc);
+    const windowStart = new Date(Date.now() - LOOKUP_WINDOW_MINUTES * 60_000).toISOString();
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { count, error: countError } = await supabaseAdmin
+      .from("signup_lookup_attempts")
+      .select("id", { count: "exact", head: true })
+      .eq("ip_hash", ipHash)
+      .gte("created_at", windowStart);
+
+    if (countError) {
+      console.error("signup lookup count failed", countError);
+      return { found: false as const, reason: "Não foi possível verificar o documento no sistema do provedor." };
+    }
+
+    if ((count ?? 0) >= LOOKUP_MAX_ATTEMPTS_PER_IP) {
+      return { found: false as const, reason: "Muitas tentativas. Aguarde alguns minutos e tente novamente." };
+    }
+
+    const { error: insertAttemptError } = await supabaseAdmin
+      .from("signup_lookup_attempts")
+      .insert({ ip_hash: ipHash, document_hash: documentHash });
+
+    if (insertAttemptError) {
+      console.error("signup lookup insert failed", insertAttemptError);
+      return { found: false as const, reason: "Não foi possível verificar o documento no sistema do provedor." };
+    }
+
     try {
       const r = await sgpConsultaCliente(doc);
       const contrato = r.contratos?.[0];
