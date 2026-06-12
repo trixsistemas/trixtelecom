@@ -31,27 +31,39 @@ export type SgpConsultaCliente = {
 };
 
 export type SgpTitulo = {
-  // SGP às vezes usa "demonstrativos" e às vezes "titulos"; normalizamos depois.
+  // SGP retorna alguns campos em camelCase e outros em snake_case dependendo da rota.
+  id?: number | string;
   titulo_id?: number | string;
   demonstrativo_id?: number | string;
   documento?: string;
   numerodocumento?: string;
+  numeroDocumento?: number | string;
   valor?: number | string;
+  valorCorrigido?: number | string;
   data_vencimento?: string;
   datavencimento?: string;
+  dataVencimento?: string;
   data_pagamento?: string | null;
   datapagamento?: string | null;
+  dataPagamento?: string | null;
+  dataCancelamento?: string | null;
+  status?: string;
   linhadigitavel?: string;
   linha_digitavel?: string;
+  linhaDigitavel?: string;
   pix_qrcode?: string;
   pix_emv?: string;
   qrcode_pix?: string;
   qrcode?: string;
+  codigoPix?: string;
   link_pagamento?: string;
   linkdoboleto?: string;
   link_boleto?: string;
   boleto_url?: string;
+  link?: string;
+  link_cobranca?: string;
   descricao?: string;
+  demonstrativo?: string;
   [k: string]: unknown;
 };
 
@@ -148,21 +160,26 @@ export function sgpSegundaVia(args: { cpfcnpj?: string; contrato?: string | numb
 
 /** Normaliza um título do SGP para o shape da tabela `faturas`. */
 export function normalizeTitulo(t: SgpTitulo) {
-  const id = t.titulo_id ?? t.demonstrativo_id ?? t.numerodocumento ?? t.documento;
-  const valor = Number(t.valor ?? 0);
-  const dataVencimento = String(t.data_vencimento ?? t.datavencimento ?? "").slice(0, 10);
-  const dataPagamentoRaw = t.data_pagamento ?? t.datapagamento ?? null;
-  const dataPagamento = dataPagamentoRaw ? String(dataPagamentoRaw).slice(0, 10) : null;
-  const linhaDigitavel = t.linhadigitavel ?? t.linha_digitavel ?? null;
-  const pixPayload = t.pix_emv ?? t.qrcode_pix ?? t.pix_qrcode ?? t.qrcode ?? null;
-  const linkPagamento = t.link_pagamento ?? t.linkdoboleto ?? t.link_boleto ?? t.boleto_url ?? null;
-  const descricao = (t.descricao as string | undefined) ?? "Mensalidade";
+  const id = t.id ?? t.titulo_id ?? t.demonstrativo_id ?? t.numeroDocumento ?? t.numerodocumento ?? t.documento;
+  const valor = Number(t.valor ?? t.valorCorrigido ?? 0);
+  const dataVencimento = String(t.data_vencimento ?? t.datavencimento ?? t.dataVencimento ?? "").slice(0, 10);
+  const dataPagamentoRaw = t.data_pagamento ?? t.datapagamento ?? t.dataPagamento ?? null;
+  const dataPagamentoStr = dataPagamentoRaw ? String(dataPagamentoRaw).slice(0, 10) : "";
+  const dataPagamento = dataPagamentoStr && dataPagamentoStr !== "0000-00-00" ? dataPagamentoStr : null;
+  const linhaDigitavel = t.linhadigitavel ?? t.linha_digitavel ?? t.linhaDigitavel ?? null;
+  const pixPayload = t.pix_emv ?? t.qrcode_pix ?? t.pix_qrcode ?? t.qrcode ?? t.codigoPix ?? null;
+  const linkPagamento = t.link_pagamento ?? t.linkdoboleto ?? t.link_boleto ?? t.boleto_url ?? t.link_cobranca ?? t.link ?? null;
+  const descricao = (t.descricao as string | undefined) ?? (t.demonstrativo as string | undefined) ?? "Mensalidade";
+  const sgpStatus = String(t.status ?? "").toLowerCase();
+  let status: "pago" | "aberto" | "cancelado" = "aberto";
+  if (dataPagamento || sgpStatus === "pago" || sgpStatus === "quitado") status = "pago";
+  else if (sgpStatus === "cancelado") status = "cancelado";
   return {
     sgp_titulo_id: id != null ? String(id) : null,
     valor,
     data_vencimento: dataVencimento,
     data_pagamento: dataPagamento,
-    status: dataPagamento ? "pago" : "aberto",
+    status,
     descricao,
     linha_digitavel: linhaDigitavel,
     pix_payload: pixPayload,
