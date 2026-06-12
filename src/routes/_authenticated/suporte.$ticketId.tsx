@@ -1,9 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useState, type FormEvent } from "react";
 import { ArrowLeft, Send, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { fecharMeuTicket } from "@/lib/tickets.functions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,6 +20,7 @@ function TicketPage() {
   const { ticketId } = Route.useParams();
   const qc = useQueryClient();
   const [msg, setMsg] = useState("");
+  const fecharTicket = useServerFn(fecharMeuTicket);
 
   const { data } = useQuery({
     queryKey: ["ticket", ticketId],
@@ -50,8 +53,7 @@ function TicketPage() {
 
   const fechar = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.rpc("fechar_ticket", { _ticket_id: ticketId });
-      if (error) throw error;
+      await fecharTicket({ data: { ticketId } });
     },
 
     onSuccess: () => {
