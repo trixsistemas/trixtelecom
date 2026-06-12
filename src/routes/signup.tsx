@@ -28,7 +28,7 @@ function SignupPage() {
   const validarSgp = useServerFn(validarClienteSgp);
   const [form, setForm] = useState({ nome: "", email: "", cpf_cnpj: "", telefone: "", password: "" });
   const [loading, setLoading] = useState(false);
-  const [sgpInfo, setSgpInfo] = useState<{ nome?: string; status?: string } | null>(null);
+  const [sgpChecked, setSgpChecked] = useState(false);
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -43,7 +43,7 @@ function SignupPage() {
       });
       return;
     }
-    setSgpInfo({ nome: check.nome, status: check.status });
+    setSgpChecked(true);
 
     // 2) Cria a conta no Lovable Cloud com os dados do cliente
     const { error } = await supabase.auth.signUp({
@@ -52,7 +52,7 @@ function SignupPage() {
       options: {
         emailRedirectTo: `${window.location.origin}/`,
         data: {
-          nome: form.nome || check.nome || "",
+          nome: form.nome || "",
           cpf_cnpj: form.cpf_cnpj,
           telefone: form.telefone,
         },
@@ -103,12 +103,12 @@ function SignupPage() {
             <Label htmlFor="password">Senha</Label>
             <Input id="password" type="password" required minLength={6} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
           </div>
-          {sgpInfo?.nome && (
+          {sgpChecked && (
             <div className="rounded-md border border-success/30 bg-success/10 text-success-foreground p-3 text-sm flex items-start gap-2">
               <ShieldCheck className="size-4 mt-0.5 text-success" />
               <div>
                 <div className="font-medium">Cliente identificado no SGP</div>
-                <div className="text-muted-foreground">{sgpInfo.nome} · {sgpInfo.status}</div>
+                <div className="text-muted-foreground">Documento validado com sucesso no sistema do provedor.</div>
               </div>
             </div>
           )}
