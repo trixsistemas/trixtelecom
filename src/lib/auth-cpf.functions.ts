@@ -70,21 +70,29 @@ export const entrarComCpf = createServerFn({ method: "POST" })
       return { ok: false as const, reason: "CPF não localizado. Confira o CPF do titular da assinatura." };
     }
 
-    const email = cpfEmail(doc);
     const nome = String(contrato.razaoSocial ?? "Cliente");
 
-    // Garante o usuário
+    // Reaproveita a conta existente deste CPF, se houver
     const { data: existing } = await supabaseAdmin
       .from("profiles")
       .select("id")
       .eq("cpf_cnpj", doc)
       .maybeSingle();
 
-    if (!existing?.id) {
+    let email = cpfEmail(doc);
+
+    if (existing?.id) {
+      const { data: userRes } = await supabaseAdmin.auth.admin.getUserById(existing.id);
+      if (userRes?.user?.email) email = userRes.user.email;
+    } else {
       const { error: createErr } = await supabaseAdmin.auth.admin.createUser({
         email,
         email_confirm: true,
-        user_metadata: { nome, cpf_cnpj: doc, telefone: Array.isArray(contrato.telefones) ? String(contrato.telefones[0] ?? "") : "" },
+        user_metadata: {
+          nome,
+          cpf_cnpj: doc,
+          telefone: Array.isArray(contrato.telefones) ? String(contrato.telefones[0] ?? "") : "",
+        },
       });
       if (createErr && !/already/i.test(createErr.message)) {
         console.error("entrarComCpf/createUser", createErr);
